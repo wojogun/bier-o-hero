@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: bierohero
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+    spec:
+      containers:
+      - name: inventory-service
+        image: wojogu/mcce24-secpv-inventory-service:1.0
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: postgresql://user:password@inventory-db.bierohero:5432/inventory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: bierohero
+spec:
+  selector:
+    app: inventory-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: NodePort

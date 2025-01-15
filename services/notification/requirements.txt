@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+#aio-pika    # Für RabbitMQ (falls verwendet)
+#smtplib     # Standard in Python enthalten, keine Installation erforderlich

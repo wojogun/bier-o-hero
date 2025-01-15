@@ -1,0 +1,17 @@
+kubectl delete all --all -n bierohero
+#kubectl delete pvc mcce24-secpv-db-pvc -n bierohero
+#kubectl delete secret mcce24-secpv-secret -n bierohero
+
+#kubectl create secret generic mcce24-akt2-secret --from-literal=MYSQL_USER=dbuser --from-literal=MYSQL_PASSWORD=7y6C7m92Dy1 --from-literal=MYSQL_ROOT_PASSWORD=XmTNPMA7tsHx -n bierohero
+
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/order-db.yaml
+kubectl apply -f k8s/order-service.yaml
+kubectl apply -f k8s/inventory-service.yaml
+kubectl apply -f k8s/notification-service.yaml
+kubectl apply -f k8s/payment-service.yaml
+kubectl apply -f k8s/event-service.yaml
+kubectl apply -f k8s/frontend-service.yaml
+
+
+kubectl get pods -n bierohero
