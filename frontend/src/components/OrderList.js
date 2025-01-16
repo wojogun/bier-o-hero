@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 
 function OrderList() {
   const [orders, setOrders] = useState([]);
+  const [inventory, setInventory] = useState([]); // Liste der Produkte aus inventory-service
   const [newOrder, setNewOrder] = useState({
     customer_name: "",
-    customer_email: "", // Email-Adresse hinzugefügt
+    customer_email: "",
     customer_address: "",
     customer_zipcode: "",
     customer_city: "",
@@ -12,16 +13,18 @@ function OrderList() {
   });
   const [status, setStatus] = useState("");
 
-  // API URL
-  const API_URL = "https://order-service.bierohero/orders/";
+  // API URLs
+  const ORDER_API_URL = "https://order-service.bierohero/orders/";
+  const INVENTORY_API_URL = "https://inventory-service.bierohero/inventory/";
 
   useEffect(() => {
     fetchOrders();
+    fetchInventory();
   }, []);
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(ORDER_API_URL);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -29,6 +32,19 @@ function OrderList() {
       setOrders(data);
     } catch (error) {
       console.error("Error fetching orders:", error);
+    }
+  };
+
+  const fetchInventory = async () => {
+    try {
+      const response = await fetch(INVENTORY_API_URL);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      setInventory(data);
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
     }
   };
 
@@ -54,7 +70,7 @@ function OrderList() {
     e.preventDefault();
     setStatus("Submitting order...");
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(ORDER_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newOrder),
@@ -87,7 +103,7 @@ function OrderList() {
       <ul>
         {orders.map((order) => (
           <li key={order.order_id}>
-            <strong>{order.customer_name}</strong> ({order.customer_city}, {order.customer_email}): {/* E-Mail-Adresse angezeigt */}
+            <strong>{order.customer_name}</strong> ({order.customer_city}, {order.customer_email}):
             <ul>
               {order.contents.map((content, idx) => (
                 <li key={idx}>
@@ -143,22 +159,28 @@ function OrderList() {
         <h4>Order Contents</h4>
         {newOrder.contents.map((content, index) => (
           <div key={index}>
-            <input
-              type="text"
-              placeholder="Product Name"
+            <select
               value={content.product_name}
-              onChange={(e) =>
-                handleContentChange(index, "product_name", e.target.value)
-              }
+              onChange={(e) => handleContentChange(index, "product_name", e.target.value)}
               required
-            />
+            >
+              <option value="" disabled>
+                Select Product
+              </option>
+              {inventory.map((product) => (
+                <option key={product.id} value={product.product_name}>
+                  {product.product_name}
+                </option>
+              ))}
+            </select>
             <input
               type="number"
               placeholder="Quantity"
               value={content.quantity}
               min="1"
+              max={inventory.find((p) => p.product_name === content.product_name)?.stock || 1000}
               onChange={(e) =>
-                handleContentChange(index, "quantity", e.target.value)
+                handleContentChange(index, "quantity", parseInt(e.target.value, 10))
               }
               required
             />
