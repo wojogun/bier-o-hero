@@ -41,3 +41,12 @@ http://127.0.0.1:8000/docs.
 
 
 ## Installation 
+
+
+
+## Postgres
+```
+psql -U user -d postgres  
+\l # zeigt dbs
+\c name #wechselt zur db
+```

@@ -6,7 +6,11 @@ import os
 
 Base = declarative_base()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@payment-db:5432/payment")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "user")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "28hn/sdn$hsaj!JHJG/")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "payment")
+DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@payment-db.bierohero:5432/{POSTGRES_DB}"
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

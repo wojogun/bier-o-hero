@@ -1,3 +1,5 @@
+import random
+
 from fastapi import FastAPI
 from sqlalchemy import Column, Integer, String, Float
 from database import Base, engine, SessionLocal
@@ -22,3 +24,8 @@ def process_payment(order_id: int, amount: float):
     db.refresh(payment)
     db.close()
     return payment
+
+@app.get("/payment/")
+def process_payment():
+    success = random.random() < 0.6
+    return {"payment_successful": success}

@@ -4,7 +4,7 @@ function EventList() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8004/events/")
+    fetch("https://localhost:8004/events/")
       .then((response) => response.json())
       .then((data) => setEvents(data));
   }, []);

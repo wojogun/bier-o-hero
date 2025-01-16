@@ -6,7 +6,7 @@ function PaymentForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch("http://localhost:8003/payments/", {
+    fetch("https://localhost:8003/payments/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order_id: orderId, amount: parseFloat(amount) }),

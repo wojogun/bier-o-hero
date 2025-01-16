@@ -17,10 +17,34 @@ spec:
       - name: inventory-service
         image: wojogu/mcce24-secpv-inventory-service:1.0
         ports:
-        - containerPort: 8000
+        - containerPort: 443
+        volumeMounts:
+        - name: tls-secret
+          mountPath: /etc/tls
+          readOnly: true
         env:
+        - name: TLS_CERT_FILE
+          value: /etc/tls/tls.crt
+        - name: TLS_KEY_FILE
+          value: /etc/tls/tls.key
+        - name: POSTGRES_DB
+          value: inventory
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_PASSWORD
         - name: DATABASE_URL
-          value: postgresql://user:password@inventory-db.bierohero:5432/inventory
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@inventory-db.bierohero:5432/inventory"
+      volumes:
+      - name: tls-secret
+        secret:
+          secretName: all-tls
 ---
 apiVersion: v1
 kind: Service
@@ -32,6 +56,92 @@ spec:
     app: inventory-service
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8000
-  type: NodePort
+      port: 443
+      targetPort: 443
+  type: ClusterIP
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-db
+  namespace: bierohero
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-db
+  template:
+    metadata:
+      labels:
+        app: inventory-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:13
+        ports:
+        - containerPort: 5432
+        #args:
+        #- "-c"
+        #- "listen_addresses=*"
+        env:
+        - name: POSTGRES_DB
+          value: inventory
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+        - mountPath: /etc/tls
+          name: tls-secret
+          readOnly: true
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-data
+      #initContainers:
+      #- name: create-database
+      #  image: postgres:13
+      #  command:
+      #  - "sh"
+      #  - "-c"
+      #  - |
+      #    until pg_isready -h inventory-db -U $(POSTGRES_USER) -d postgres; do
+      #      echo "Waiting for PostgreSQL to be ready..."
+      #      sleep 5
+      #    done
+      #    psql -h inventory-db -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE inventory;"
+      #  env:
+      #  - name: POSTGRES_USER
+      #    valueFrom:
+      #      secretKeyRef:
+      #        name: bhsecrets
+      #        key: POSTGRES_USER
+      #  - name: POSTGRES_PASSWORD
+      #    valueFrom:
+      #      secretKeyRef:
+      #        name: bhsecrets
+      #        key: POSTGRES_PASSWORD
+      volumes:
+      - name: tls-secret
+        secret:
+          secretName: all-tls
+      - name: postgres-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-db
+  namespace: bierohero
+spec:
+  selector:
+    app: inventory-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

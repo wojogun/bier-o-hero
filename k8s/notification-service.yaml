@@ -18,9 +18,38 @@ spec:
         image: wojogu/mcce24-secpv-notification-service:1.0
         ports:
         - containerPort: 8000
+
+        volumeMounts:
+        - name: tls-secret
+          mountPath: /etc/tls
+          readOnly: true
         env:
+        - name: TLS_CERT_FILE
+          value: /etc/tls/tls.crt
+        - name: TLS_KEY_FILE
+          value: /etc/tls/tls.key
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: bhconfig
+              key: POSTGRES_DB_NOTIFICATION
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_PASSWORD
         - name: DATABASE_URL
-          value: postgresql://user:password@notification-db.bierohero:5432/notification
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@notification-db.bierohero:5432/notification"
+      volumes:
+      - name: tls-secret
+        secret:
+          secretName: all-tls
+
 ---
 apiVersion: v1
 kind: Service
@@ -35,3 +64,5 @@ spec:
       port: 80
       targetPort: 8000
   type: NodePort
+
+
