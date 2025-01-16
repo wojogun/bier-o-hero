@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: bierohero
   name: order-service
+  namespace: bierohero
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: order-service
@@ -18,15 +18,42 @@ spec:
         image: wojogu/mcce24-secpv-order-service:1.1
         ports:
         - containerPort: 8000
+        volumeMounts:
+        - name: tls-secret
+          mountPath: /etc/tls
+          readOnly: true
         env:
+        - name: TLS_CERT_FILE
+          value: /etc/tls/tls.crt
+        - name: TLS_KEY_FILE
+          value: /etc/tls/tls.key
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: bhconfig
+              key: POSTGRES_DB_ORDER
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_PASSWORD
         - name: DATABASE_URL
-          value: postgresql://user:password@order-db/order
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@order-db.bierohero:5432/order"
+      volumes:
+      - name: tls-secret
+        secret:
+          secretName: all-tls
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: bierohero
   name: order-service
+  namespace: bierohero
 spec:
   selector:
     app: order-service
@@ -35,11 +62,62 @@ spec:
       port: 80
       targetPort: 8000
   type: NodePort
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-db
+  namespace: bierohero
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-db
+  template:
+    metadata:
+      labels:
+        app: order-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:13
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: bhconfig
+              key: POSTGRES_DB_ORDER
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bhsecrets
+              key: POSTGRES_PASSWORD
+        - name: DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@order-db.bierohero:5432/order"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-data
+      volumes:
+      - name: postgres-data
+        emptyDir: {}
 ---
 apiVersion: v1
-kind: ConfigMap
+kind: Service
 metadata:
-  name: order-service-config
+  name: order-db
   namespace: bierohero
-  labels:
-    app: order-service
+spec:
+  selector:
+    app: order-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bhconfig
+  namespace: bierohero
+  labels:
+    app: order-service
+data:
+  POSTGRES_DB_ORDER: order
+  POSTGRES_DB_INVENTORY: inventory
+  POSTGRES_DB_PAYMENT: payment
+  POSTGRES_DB_EVENT: event
+  POSTGRES_DB_NOTIFICATION: notification
+  SMTP_SERVER: "smtp.example.com"
+  SMTP_PORT: "465"
+  REORDER_EMAIL: "wolfi@cocheck.at"

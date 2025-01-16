@@ -1,17 +1,24 @@
 FROM python:3.9-slim
 
-# Set the working directory
+# Installiere systemabhängige Pakete
+RUN apt-get update && apt-get install -y gcc libpq-dev && apt-get clean
+
+# initiale Daten
+# COPY init.sql /docker-entrypoint-initdb.d/
+
+# Setze das Arbeitsverzeichnis
 WORKDIR /app
 
-# Copy the requirements file and install dependencies
+# Kopiere die Abhängigkeiten und installiere sie
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
-COPY . .
 
-# Expose the application port
+# Kopiere den Anwendungscode
+COPY src/ .
+
+# Exponiere den Port
 EXPOSE 8000
 
-# Run the application
+# Starte den Service
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

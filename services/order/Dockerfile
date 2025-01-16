@@ -1,18 +1,22 @@
-# Basis-Image
 FROM python:3.9-slim
 
-# Setze das Arbeitsverzeichnis
+# Installiere benötigte Systembibliotheken
+RUN apt-get update && apt-get install -y \
+    libpq-dev gcc && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Arbeitsverzeichnis setzen
 WORKDIR /app
 
-# Kopiere die Abhängigkeiten und installiere sie
+# Abhängigkeiten kopieren und installieren
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Kopiere den Code
+# Anwendungsdateien kopieren
 COPY . .
 
-# Exponiere den Port
+# Port freigeben
 EXPOSE 8000
 
-# Startbefehl
-CMD ["uvicorn", "order_service:app", "--host", "0.0.0.0", "--port", "8000"]
+# Anwendung starten
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
